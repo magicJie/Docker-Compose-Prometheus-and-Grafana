@@ -9,9 +9,8 @@ volumes:
     grafana_data: {}
 
 services:
-
   prometheus:
-    image: prom/prometheus:v2.17.1
+    image: prom/prometheus:v2.37.5
     container_name: prometheus
     volumes:
       - ./prometheus:/etc/prometheus
@@ -26,13 +25,15 @@ services:
     restart: unless-stopped
     expose:
       - 9090
+    ports:
+      - 9092:9090
     networks:
       - monitor-net
     labels:
       org.label-schema.group: "monitoring"
 
   alertmanager:
-    image: prom/alertmanager:v0.20.0
+    image: prom/alertmanager:v0.25.0
     container_name: alertmanager
     volumes:
       - ./alertmanager:/etc/alertmanager
@@ -48,7 +49,7 @@ services:
       org.label-schema.group: "monitoring"
 
   nodeexporter:
-    image: prom/node-exporter:v0.18.1
+    image: prom/node-exporter:v1.5.0
     container_name: nodeexporter
     volumes:
       - /proc:/host/proc:ro
@@ -68,24 +69,24 @@ services:
       org.label-schema.group: "monitoring"
 
   cadvisor:
-    image: gcr.io/google-containers/cadvisor:v0.34.0
+    image: docker.aiminjie.com/budry/cadvisor-arm:0.30.2
     container_name: cadvisor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
+      - /data/docker_root/docker:/var/lib/docker:ro
       #- /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
     restart: unless-stopped
     expose:
-      - 8080
+      - 8180
     networks:
       - monitor-net
     labels:
       org.label-schema.group: "monitoring"
 
   grafana:
-    image: grafana/grafana:6.7.2
+    image: grafana/grafana:8.5.15
     container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
@@ -97,13 +98,15 @@ services:
     restart: unless-stopped
     expose:
       - 3000
+    ports:
+      - 3000:3000
     networks:
       - monitor-net
     labels:
       org.label-schema.group: "monitoring"
 
   pushgateway:
-    image: prom/pushgateway:v1.2.0
+    image: prom/pushgateway:v1.5.1
     container_name: pushgateway
     restart: unless-stopped
     expose:
@@ -113,21 +116,21 @@ services:
     labels:
       org.label-schema.group: "monitoring"
 
-  caddy:
-    image: stefanprodan/caddy
-    container_name: caddy
-    ports:
-      - "3000:3000"
-      - "9090:9090"
-      - "9093:9093"
-      - "9091:9091"
-    volumes:
-      - ./caddy:/etc/caddy
-    environment:
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-    restart: unless-stopped
-    networks:
-      - monitor-net
-    labels:
-      org.label-schema.group: "monitoring"
+  # caddy:
+  #   image: arm64v8/caddy
+  #   container_name: caddy
+  #   ports:
+  #     - "3000:3000"
+  #     - "9092:9090"
+  #     - "9093:9093"
+  #     - "9091:9091"
+  #   volumes:
+  #     - ./caddy:/etc/caddy
+  #   environment:
+  #     - ADMIN_USER=${ADMIN_USER}
+  #     - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+  #   restart: unless-stopped
+  #   networks:
+  #     - monitor-net
+  #   labels:
+  #     org.label-schema.group: "monitoring"
